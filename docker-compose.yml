@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+
+  db:
+    image: mariadb:11
+    container_name: inventario_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: inventario
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app123
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  backend:
+    image: python:3.11
+    container_name: inventario_dev
+    working_dir: /workspace
+    volumes:
+      - ./backend:/workspace
+    ports:
+      - "8000:8000"
+    command: bash -c "pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  dbdata:
