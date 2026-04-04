@@ -57,16 +57,24 @@ export class SaleService {
           throw new HttpError(404, "Client not found");
         }
       }
+      if (!client) {
+        throw new HttpError(400, "Client is required");
+      }
 
       const productIds = dto.items.map((item) => item.productId);
+      if (new Set(productIds).size !== productIds.length) {
+        throw new HttpError(400, "Duplicate products are not allowed in the same sale");
+      }
       const products = await queryRunner.manager.find(Product, {
-        where: { id: In(productIds) }
+        where: { id: In(productIds) },
+        relations: { category: true }
       });
       const productMap = new Map(products.map((product) => [product.id, product]));
 
       const items: SaleItem[] = [];
       let subtotal = 0;
       let ivaAmount = 0;
+      let total = 0;
 
       for (const itemDto of dto.items) {
         const product = productMap.get(itemDto.productId);
@@ -80,22 +88,31 @@ export class SaleService {
           throw new HttpError(400, `Insufficient stock for ${product.name}`);
         }
 
-        const unitPrice = Number(product.price);
-        const lineSubtotal = roundMoney(unitPrice * itemDto.quantity);
-        const lineIva = roundMoney(lineSubtotal * (Number(product.ivaRate) / 100));
-        const lineTotal = roundMoney(lineSubtotal + lineIva);
+        const hasIva = typeof itemDto.hasIva === "boolean"
+          ? itemDto.hasIva
+          : Number(product.ivaRate) > 0;
+        const unitPrice = roundMoney(itemDto.finalPrice);
+        const lineTotal = roundMoney(unitPrice * itemDto.quantity);
+        const lineSubtotal = hasIva
+          ? roundMoney(lineTotal / 1.12)
+          : lineTotal;
+        const lineIva = hasIva
+          ? roundMoney(lineTotal - lineSubtotal)
+          : 0;
 
         product.stock -= itemDto.quantity;
         await queryRunner.manager.save(product);
 
         subtotal += lineSubtotal;
         ivaAmount += lineIva;
+        total += lineTotal;
 
         const saleItem = queryRunner.manager.create(SaleItem);
         saleItem.product = product;
         saleItem.productId = product.id;
         saleItem.quantity = itemDto.quantity;
         saleItem.unitPrice = money(unitPrice);
+        saleItem.hasIva = hasIva;
         saleItem.subtotal = money(lineSubtotal);
         saleItem.ivaAmount = money(lineIva);
         saleItem.total = money(lineTotal);
@@ -104,7 +121,7 @@ export class SaleService {
 
       subtotal = roundMoney(subtotal);
       ivaAmount = roundMoney(ivaAmount);
-      const total = roundMoney(subtotal + ivaAmount);
+      total = roundMoney(total);
 
       const paidAmount = roundMoney(
         dto.payments.reduce((sum, payment) => sum + payment.amount, 0)
@@ -114,10 +131,30 @@ export class SaleService {
       }
 
       const payments = dto.payments.map((payment) => {
+        const normalizedMethod = payment.paymentMethod.toUpperCase();
+        if (normalizedMethod === "TRANSFER" && !payment.reference?.trim()) {
+          throw new HttpError(400, "Transfer payment requires a reference number");
+        }
+
+        const receivedAmount = normalizedMethod === "CASH"
+          ? roundMoney(payment.receivedAmount ?? 0)
+          : null;
+        const changeAmount = normalizedMethod === "CASH"
+          ? roundMoney(receivedAmount! - payment.amount)
+          : null;
+
+        if (normalizedMethod === "CASH") {
+          if (!receivedAmount || receivedAmount < payment.amount) {
+            throw new HttpError(400, "Cash payment requires received amount greater than or equal to total");
+          }
+        }
+
         const salePayment = queryRunner.manager.create(SalePayment);
-        salePayment.paymentMethod = payment.paymentMethod.toUpperCase();
+        salePayment.paymentMethod = normalizedMethod;
         salePayment.amount = money(payment.amount);
         salePayment.reference = (payment.reference ?? null) as unknown as string;
+        salePayment.receivedAmount = (receivedAmount !== null ? money(receivedAmount) : null) as unknown as string;
+        salePayment.changeAmount = (changeAmount !== null ? money(changeAmount) : null) as unknown as string;
         return salePayment;
       });
 
@@ -127,6 +164,7 @@ export class SaleService {
       sale.subtotal = money(subtotal);
       sale.ivaAmount = money(ivaAmount);
       sale.total = money(total);
+      sale.createdBy = dto.createdBy ?? "system";
       sale.status = "COMPLETED";
       sale.notes = (dto.notes ?? null) as unknown as string;
       sale.soldAt = dto.soldAt ? new Date(dto.soldAt) : new Date();

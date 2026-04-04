@@ -33,6 +33,9 @@ export class SaleItem {
   @Column({ name: "unit_price", type: "decimal", precision: 12, scale: 2 })
   unitPrice!: string;
 
+  @Column({ name: "has_iva", type: "boolean", default: true })
+  hasIva!: boolean;
+
   @Column({ type: "decimal", precision: 12, scale: 2 })
   subtotal!: string;
 

@@ -25,7 +25,7 @@ export class CreateClientDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(30)
+  @MaxLength(20)
   phone?: string;
 
   @IsOptional()

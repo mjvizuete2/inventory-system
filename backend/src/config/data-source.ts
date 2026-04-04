@@ -2,6 +2,7 @@ import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { CashClosure } from "../entities/CashClosure";
 import { CashClosurePayment } from "../entities/CashClosurePayment";
+import { Category } from "../entities/Category";
 import { Client } from "../entities/Client";
 import { DocumentSequence } from "../entities/DocumentSequence";
 import { Product } from "../entities/Product";
@@ -23,6 +24,7 @@ export const AppDataSource = new DataSource({
   logging: false,
   entities: [
     User,
+    Category,
     Client,
     Product,
     Sale,

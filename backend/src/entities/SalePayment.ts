@@ -27,4 +27,10 @@ export class SalePayment {
 
   @Column({ type: "varchar", nullable: true, length: 120 })
   reference!: string;
+
+  @Column({ name: "received_amount", type: "decimal", precision: 12, scale: 2, nullable: true })
+  receivedAmount!: string;
+
+  @Column({ name: "change_amount", type: "decimal", precision: 12, scale: 2, nullable: true })
+  changeAmount!: string;
 }

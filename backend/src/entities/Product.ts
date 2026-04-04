@@ -2,10 +2,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from "typeorm";
+import { Category } from "./Category";
 import { SaleItem } from "./SaleItem";
 
 @Entity("products")
@@ -19,8 +22,18 @@ export class Product {
   @Column({ length: 150 })
   name!: string;
 
+  @ManyToOne(() => Category, (category) => category.products)
+  @JoinColumn({ name: "category_id" })
+  category!: Category;
+
+  @Column({ name: "category_id", type: "int" })
+  categoryId!: number;
+
   @Column({ type: "text", nullable: true })
   description!: string;
+
+  @Column({ type: "varchar", nullable: true, length: 150 })
+  provider!: string;
 
   @Column({ type: "decimal", precision: 12, scale: 2 })
   price!: string;

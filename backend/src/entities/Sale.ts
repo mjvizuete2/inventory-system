@@ -35,6 +35,9 @@ export class Sale {
   @Column({ type: "decimal", precision: 12, scale: 2 })
   total!: string;
 
+  @Column({ name: "created_by", type: "varchar", length: 120, default: "system" })
+  createdBy!: string;
+
   @Column({ type: "varchar", default: "COMPLETED", length: 30 })
   status!: string;
 

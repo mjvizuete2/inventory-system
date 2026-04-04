@@ -2,6 +2,7 @@ import { Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsInt,
   IsNumber,
@@ -22,6 +23,15 @@ export class SaleItemInputDto {
   @IsNumber()
   @Min(1)
   quantity!: number;
+
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  finalPrice!: number;
+
+  @Type(() => Boolean)
+  @IsBoolean()
+  hasIva!: boolean;
 }
 
 export class SalePaymentInputDto {
@@ -38,6 +48,12 @@ export class SalePaymentInputDto {
   @IsString()
   @MaxLength(120)
   reference?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  receivedAmount?: number;
 }
 
 export class CreateSaleDto {
@@ -58,6 +74,11 @@ export class CreateSaleDto {
   @ValidateNested({ each: true })
   @Type(() => SalePaymentInputDto)
   payments!: SalePaymentInputDto[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  createdBy?: string;
 
   @IsOptional()
   @IsString()

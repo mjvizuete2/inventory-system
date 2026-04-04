@@ -1,9 +1,11 @@
 import { app } from "./app";
 import { AppDataSource } from "./config/data-source";
 import { env } from "./config/env";
+import { prepareLegacySchema } from "./config/prepare-legacy-schema";
 import { seedDatabase } from "./seed";
 
 const bootstrap = async (): Promise<void> => {
+  await prepareLegacySchema();
   await AppDataSource.initialize();
   await seedDatabase();
 

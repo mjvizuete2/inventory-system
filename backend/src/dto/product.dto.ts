@@ -17,9 +17,19 @@ export class CreateProductDto {
   @MaxLength(150)
   name!: string;
 
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  categoryId!: number;
+
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  provider?: string;
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })

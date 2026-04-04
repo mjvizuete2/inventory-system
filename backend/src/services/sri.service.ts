@@ -145,17 +145,20 @@ export class SRIService {
     for (const item of sale.items) {
       const product = item.product as Product;
       const detalle = detalles.ele("detalle");
+      const baseUnitPrice = item.quantity > 0
+        ? money(Number(item.subtotal) / item.quantity)
+        : item.subtotal;
       detalle.ele("codigoPrincipal").txt(product.sku);
       detalle.ele("descripcion").txt(product.name);
       detalle.ele("cantidad").txt(String(item.quantity));
-      detalle.ele("precioUnitario").txt(item.unitPrice);
+      detalle.ele("precioUnitario").txt(baseUnitPrice);
       detalle.ele("descuento").txt("0.00");
       detalle.ele("precioTotalSinImpuesto").txt(item.subtotal);
 
       const impuesto = detalle.ele("impuestos").ele("impuesto");
       impuesto.ele("codigo").txt("2");
-      impuesto.ele("codigoPorcentaje").txt(Number(product.ivaRate) > 0 ? "2" : "0");
-      impuesto.ele("tarifa").txt(money(Number(product.ivaRate)));
+      impuesto.ele("codigoPorcentaje").txt(item.hasIva ? "2" : "0");
+      impuesto.ele("tarifa").txt(item.hasIva ? "12.00" : "0.00");
       impuesto.ele("baseImponible").txt(item.subtotal);
       impuesto.ele("valor").txt(item.ivaAmount);
     }

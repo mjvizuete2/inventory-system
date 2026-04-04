@@ -24,6 +24,7 @@ export const SaleController = {
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      req.body.createdBy = req.user?.email ?? req.body.createdBy;
       res.status(201).json(await saleService.create(req.body));
     } catch (error) {
       next(error);
