@@ -33,7 +33,7 @@ export const SaleController = {
 
   async generateInvoice(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const sale = await saleService.getById(Number(req.params.id));
+      const sale = await saleService.getEntityForInvoice(Number(req.params.id));
       const invoice = await sriService.generateAndSendInvoice(
         sale,
         req.body.establishmentCode,

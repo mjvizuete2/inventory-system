@@ -4,19 +4,13 @@ import { Category } from "../entities/Category";
 import { Product } from "../entities/Product";
 import { HttpError } from "../utils/http-error";
 import { money } from "../utils/math";
+import { serializeProduct } from "../utils/serializers";
 
 export class ProductService {
   private readonly repository = AppDataSource.getRepository(Product);
   private readonly categoryRepository = AppDataSource.getRepository(Category);
 
-  async list(): Promise<Product[]> {
-    return this.repository.find({
-      relations: { category: true },
-      order: { id: "DESC" }
-    });
-  }
-
-  async getById(id: number): Promise<Product> {
+  private async getEntityById(id: number): Promise<Product> {
     const product = await this.repository.findOne({
       where: { id },
       relations: { category: true }
@@ -27,7 +21,19 @@ export class ProductService {
     return product;
   }
 
-  async create(dto: CreateProductDto): Promise<Product> {
+  async list(): Promise<Array<ReturnType<typeof serializeProduct>>> {
+    const products = await this.repository.find({
+      relations: { category: true },
+      order: { id: "DESC" }
+    });
+    return products.map(serializeProduct);
+  }
+
+  async getById(id: number): Promise<ReturnType<typeof serializeProduct>> {
+    return serializeProduct(await this.getEntityById(id));
+  }
+
+  async create(dto: CreateProductDto): Promise<ReturnType<typeof serializeProduct>> {
     const normalizedSku = dto.sku.trim().toUpperCase();
     const existing = await this.repository.findOne({ where: { sku: normalizedSku } });
     if (existing) {
@@ -54,8 +60,8 @@ export class ProductService {
     return this.getById(saved.id);
   }
 
-  async update(id: number, dto: UpdateProductDto): Promise<Product> {
-    const product = await this.getById(id);
+  async update(id: number, dto: UpdateProductDto): Promise<ReturnType<typeof serializeProduct>> {
+    const product = await this.getEntityById(id);
     const normalizedSku = dto.sku.trim().toUpperCase();
     if (normalizedSku !== product.sku) {
       const existing = await this.repository.findOne({ where: { sku: normalizedSku } });
@@ -86,7 +92,7 @@ export class ProductService {
   }
 
   async remove(id: number): Promise<void> {
-    const product = await this.getById(id);
+    const product = await this.getEntityById(id);
     await this.repository.remove(product);
   }
 }

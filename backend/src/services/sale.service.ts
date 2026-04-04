@@ -8,23 +8,12 @@ import { SaleItem } from "../entities/SaleItem";
 import { SalePayment } from "../entities/SalePayment";
 import { HttpError } from "../utils/http-error";
 import { money, roundMoney } from "../utils/math";
+import { serializeSale } from "../utils/serializers";
 
 export class SaleService {
   private readonly saleRepository = AppDataSource.getRepository(Sale);
 
-  async list(): Promise<Sale[]> {
-    return this.saleRepository.find({
-      relations: {
-        client: true,
-        items: { product: true },
-        payments: true,
-        invoice: true
-      },
-      order: { id: "DESC" }
-    });
-  }
-
-  async getById(id: number): Promise<Sale> {
+  private async getEntityById(id: number): Promise<Sale> {
     const sale = await this.saleRepository.findOne({
       where: { id },
       relations: {
@@ -42,7 +31,24 @@ export class SaleService {
     return sale;
   }
 
-  async create(dto: CreateSaleDto): Promise<Sale> {
+  async list(): Promise<Array<ReturnType<typeof serializeSale>>> {
+    const sales = await this.saleRepository.find({
+      relations: {
+        client: true,
+        items: { product: true },
+        payments: true,
+        invoice: true
+      },
+      order: { id: "DESC" }
+    });
+    return sales.map(serializeSale);
+  }
+
+  async getById(id: number): Promise<ReturnType<typeof serializeSale>> {
+    return serializeSale(await this.getEntityById(id));
+  }
+
+  async create(dto: CreateSaleDto): Promise<ReturnType<typeof serializeSale>> {
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -192,5 +198,9 @@ export class SaleService {
         payments: true
       }
     });
+  }
+
+  async getEntityForInvoice(id: number): Promise<Sale> {
+    return this.getEntityById(id);
   }
 }

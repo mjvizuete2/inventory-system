@@ -5,6 +5,7 @@ import { CashClosurePayment } from "../entities/CashClosurePayment";
 import { SaleService } from "./sale.service";
 import { HttpError } from "../utils/http-error";
 import { money, roundMoney } from "../utils/math";
+import { serializeCashClosure, serializeCashClosureSummary } from "../utils/serializers";
 
 export class CashClosureService {
   private readonly repository = AppDataSource.getRepository(CashClosure);
@@ -69,20 +70,11 @@ export class CashClosureService {
     };
   }
 
-  async summarize(dto: CreateCashClosureDto): Promise<{
-    startDate: Date;
-    endDate: Date;
-    filterPaymentMethod: string | null;
-    subtotal: string;
-    ivaAmount: string;
-    total: string;
-    salesCount: number;
-    payments: Array<{ paymentMethod: string; total: string; salesCount: number }>;
-  }> {
-    return this.buildSummary(dto);
+  async summarize(dto: CreateCashClosureDto): Promise<ReturnType<typeof serializeCashClosureSummary>> {
+    return serializeCashClosureSummary(await this.buildSummary(dto));
   }
 
-  async create(dto: CreateCashClosureDto): Promise<CashClosure> {
+  async create(dto: CreateCashClosureDto): Promise<ReturnType<typeof serializeCashClosure>> {
     const summary = await this.buildSummary(dto);
 
     const closure = this.repository.create();
@@ -108,16 +100,21 @@ export class CashClosureService {
 
     await this.paymentRepository.save(payments);
 
-    return this.repository.findOneOrFail({
+    const populatedClosure = await this.repository.findOneOrFail({
       where: { id: savedClosure.id },
       relations: { payments: true }
     });
+
+    return serializeCashClosure(populatedClosure);
   }
 
-  async list(): Promise<CashClosure[]> {
-    return this.repository.find({
+  async list(): Promise<Array<ReturnType<typeof serializeCashClosure>>> {
+    const closures = await this.repository.find({
       relations: { payments: true },
       order: { id: "DESC" }
     });
+
+    return closures.map(serializeCashClosure);
   }
+
 }
