@@ -71,9 +71,9 @@ export class SaleService {
       if (new Set(productIds).size !== productIds.length) {
         throw new HttpError(400, "Duplicate products are not allowed in the same sale");
       }
+      const sortedProductIds = [...productIds].sort((left, right) => left - right);
       const products = await queryRunner.manager.find(Product, {
-        where: { id: In(productIds) },
-        relations: { category: true }
+        where: { id: In(sortedProductIds) }
       });
       const productMap = new Map(products.map((product) => [product.id, product]));
 
@@ -106,12 +106,27 @@ export class SaleService {
           ? roundMoney(lineTotal - lineSubtotal)
           : 0;
 
-        product.stock -= itemDto.quantity;
-        await queryRunner.manager.save(product);
+        const updateResult = await queryRunner.manager.query(
+          "UPDATE products SET stock = stock - ? WHERE id = ? AND active = true AND stock >= ?",
+          [itemDto.quantity, product.id, itemDto.quantity]
+        ) as { affectedRows?: number };
+        if (updateResult.affectedRows !== 1) {
+          const currentProduct = await queryRunner.manager.findOne(Product, {
+            where: { id: product.id }
+          });
+          if (!currentProduct) {
+            throw new HttpError(404, `Product ${itemDto.productId} not found`);
+          }
+          if (!currentProduct.active) {
+            throw new HttpError(400, `Product ${currentProduct.name} is inactive`);
+          }
+          throw new HttpError(400, `Insufficient stock for ${currentProduct.name}`);
+        }
 
         subtotal += lineSubtotal;
         ivaAmount += lineIva;
         total += lineTotal;
+        product.stock -= itemDto.quantity;
 
         const saleItem = queryRunner.manager.create(SaleItem);
         saleItem.product = product;
