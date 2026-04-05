@@ -153,7 +153,8 @@ export class SaleService {
 
       const payments = dto.payments.map((payment) => {
         const normalizedMethod = payment.paymentMethod.toUpperCase();
-        if (normalizedMethod === "TRANSFER" && !payment.reference?.trim()) {
+        const normalizedReference = payment.reference?.trim() || null;
+        if (normalizedMethod === "TRANSFER" && !normalizedReference) {
           throw new HttpError(400, "Transfer payment requires a reference number");
         }
 
@@ -173,7 +174,7 @@ export class SaleService {
         const salePayment = queryRunner.manager.create(SalePayment);
         salePayment.paymentMethod = normalizedMethod;
         salePayment.amount = money(payment.amount);
-        salePayment.reference = (payment.reference ?? null) as unknown as string;
+        salePayment.reference = normalizedReference as unknown as string;
         salePayment.receivedAmount = (receivedAmount !== null ? money(receivedAmount) : null) as unknown as string;
         salePayment.changeAmount = (changeAmount !== null ? money(changeAmount) : null) as unknown as string;
         return salePayment;

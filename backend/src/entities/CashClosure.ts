@@ -15,11 +15,26 @@ export class CashClosure {
   @Column({ name: "start_date", type: "datetime" })
   startDate!: Date;
 
-  @Column({ name: "end_date", type: "datetime" })
-  endDate!: Date;
+  @Column({ name: "end_date", type: "datetime", nullable: true })
+  endDate!: Date | null;
+
+  @Column({ type: "varchar", length: 20, default: "OPEN" })
+  status!: string;
+
+  @Column({ name: "opened_by", type: "varchar", length: 120, default: "system" })
+  openedBy!: string;
+
+  @Column({ name: "closed_by", type: "varchar", length: 120, nullable: true })
+  closedBy!: string | null;
+
+  @Column({ name: "opening_amount", type: "decimal", precision: 12, scale: 2, default: "0.00" })
+  openingAmount!: string;
+
+  @Column({ name: "closing_amount", type: "decimal", precision: 12, scale: 2, default: "0.00" })
+  closingAmount!: string;
 
   @Column({ name: "filter_payment_method", type: "varchar", nullable: true, length: 30 })
-  filterPaymentMethod!: string;
+  filterPaymentMethod!: string | null;
 
   @Column({ type: "decimal", precision: 12, scale: 2 })
   subtotal!: string;

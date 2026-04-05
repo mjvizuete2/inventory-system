@@ -1,6 +1,7 @@
-import { IsDateString, IsOptional, IsString, MaxLength } from "class-validator";
+import { Type } from "class-transformer";
+import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, MaxLength, Min } from "class-validator";
 
-export class CreateCashClosureDto {
+export class CashClosureSummaryDto {
   @IsDateString()
   startDate!: string;
 
@@ -11,4 +12,24 @@ export class CreateCashClosureDto {
   @IsString()
   @MaxLength(30)
   paymentMethod?: string;
+}
+
+export class OpenCashClosureDto {
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  openingAmount!: number;
+}
+
+export class CloseCashClosureDto {
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  reopen?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  nextOpeningAmount?: number;
 }

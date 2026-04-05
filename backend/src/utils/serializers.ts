@@ -45,6 +45,8 @@ export const serializeSale = (sale: Sale) => ({
 
 export const serializeCashClosure = (closure: CashClosure) => ({
   ...closure,
+  openingAmount: toNumber(closure.openingAmount),
+  closingAmount: toNumber(closure.closingAmount),
   subtotal: toNumber(closure.subtotal),
   ivaAmount: toNumber(closure.ivaAmount),
   total: toNumber(closure.total),
@@ -58,6 +60,11 @@ export const serializeCashClosureSummary = (summary: {
   startDate: Date;
   endDate: Date;
   filterPaymentMethod: string | null;
+  openingAmount?: string;
+  closingAmount?: string;
+  status?: string;
+  openedBy?: string;
+  closedBy?: string | null;
   subtotal: string;
   ivaAmount: string;
   total: string;
@@ -65,6 +72,8 @@ export const serializeCashClosureSummary = (summary: {
   payments: Array<{ paymentMethod: string; total: string; salesCount: number }>;
 }) => ({
   ...summary,
+  openingAmount: toNumber(summary.openingAmount),
+  closingAmount: toNumber(summary.closingAmount),
   subtotal: toNumber(summary.subtotal),
   ivaAmount: toNumber(summary.ivaAmount),
   total: toNumber(summary.total),

@@ -14,7 +14,29 @@ export const CashClosureController = {
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      res.status(201).json(await cashClosureService.create(req.body));
+      res.status(201).json(await cashClosureService.open(req.body, req.user?.email ?? "system"));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async current(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const currentClosure = await cashClosureService.getCurrent();
+      if (!currentClosure) {
+        res.status(404).json({ message: "There is no open cash box" });
+        return;
+      }
+
+      res.json(currentClosure);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async close(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      res.json(await cashClosureService.close(req.body, req.user?.email ?? "system"));
     } catch (error) {
       next(error);
     }
