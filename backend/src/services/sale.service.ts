@@ -1,6 +1,7 @@
 import { Between, In } from "typeorm";
 import { AppDataSource } from "../config/data-source";
 import { CreateSaleDto } from "../dto/sale.dto";
+import { CashClosure } from "../entities/CashClosure";
 import { Client } from "../entities/Client";
 import { Product } from "../entities/Product";
 import { Sale } from "../entities/Sale";
@@ -54,6 +55,14 @@ export class SaleService {
     await queryRunner.startTransaction();
 
     try {
+      const openCashBox = await queryRunner.manager.findOne(CashClosure, {
+        where: { status: "OPEN" },
+        order: { id: "DESC" }
+      });
+      if (!openCashBox) {
+        throw new HttpError(400, "There is no open cash box");
+      }
+
       let client: Client | null = null;
       if (dto.clientId) {
         client = await queryRunner.manager.findOne(Client, {
